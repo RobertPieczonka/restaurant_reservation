@@ -1,0 +1,43 @@
+{% extends 'reserv/template.html' %}
+{% block title %}Rezerwuj stolik{% endblock %}
+{% load static %}
+{% block content %}
+{% load crispy_forms_tags %}
+    <h1>Reservation Form</h1>
+
+    <form method="post" class="container">
+        {% csrf_token %}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                {{ form.table|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ form.date|as_crispy_field }}
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                {{ form.time|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ form.duration|as_crispy_field }}
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                {{ form.name|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ form.phone|as_crispy_field }}
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                {{ form.email|as_crispy_field }}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Rezerwuj</button>
+        
+    </form>
+<br>
+{% endblock %}

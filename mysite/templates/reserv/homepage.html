@@ -1,0 +1,213 @@
+{% extends 'reserv/template.html' %}
+{% block title %}Restaurant Homepage{% endblock %}
+{% load static %}
+{% block content %} 
+    <script>
+        $(document).ready(function(){
+            // Ustawienie domyślnej daty na dziś
+            var today = new Date().toISOString().split('T')[0];
+            
+            $("#duration").val(1);
+            // Ustawienie domyślnego czasu na najbliższą pełną godzinę
+            var now = new Date();
+            now.setMinutes(0, 0, 0);
+            var nearestHour = new Date(now.setHours(now.getHours() + 1));
+            var minHour = nearestHour;
+            // Check if the nearest hour is greater than 22:00
+            if (nearestHour.getHours() > 22){
+                nearestHour.setDate(nearestHour.getDate() + 1);
+            }
+            if (nearestHour.getHours() > 22 || nearestHour.getHours() < 11) {
+                    // Set to 11:00 next day
+                    nearestHour.setHours(11, 0, 0, 0);
+                }
+            today = nearestHour.toISOString().split('T')[0];
+            $("#datepicker").val(today);
+            if (minHour.getHours() >= 11) {
+                // Set to 11:00 next day
+                minHour.setDate(nearestHour.getDate());
+                minHour.setHours(nearestHour.getHours(), 0, 0, 0);
+                    }
+            function roundMinutes(date) {
+                var minutes = date.getMinutes();
+                if (minutes < 15) {
+                    date.setMinutes(0);
+                } else if (minutes < 45) {
+                    date.setMinutes(30);
+                } else {
+                    date.setMinutes(0);
+                    date.setHours(date.getHours() + 1);
+                }
+                return date;
+            }
+
+            function calculateMaxDuration(selectedTime) {
+                var reservationEndTime = new Date(selectedTime);
+                reservationEndTime.setHours(reservationEndTime.getHours());
+                var maxTime = new Date(selectedTime);
+                maxTime.setHours(23, 0, 0, 0);
+                var difference = (maxTime - reservationEndTime) / 1000 / 60 / 60; // Difference in hours
+                return Math.max(1, Math.min(4, Math.floor(difference)));
+            }
+
+            $("#timepicker").kendoTimePicker({
+                format: "HH:mm",
+                value: nearestHour,
+                componentType: "modern",
+                // Check if the nearest hour is greater than 22:00
+                
+                min: minHour, //date part is ignored
+                max: new Date(2000, 0, 1, 22, 0, 0), //date part is ignored
+                messages: {
+                    now: "Teraz",
+                    hour: "Godzina",
+                    minute: "Minuta",
+                    cancel: "Anuluj",
+                    set: "Ustaw"
+                },
+                change: function() {
+                    var timepicker = $("#timepicker").data("kendoTimePicker");
+                    var selectedTime = timepicker.value();
+                    var durationInput = $("#duration");
+                    if (selectedTime) {
+                        selectedTime = roundMinutes(selectedTime);
+                        timepicker.value(selectedTime);
+                        
+                        // Calculate remaining time until 23:00
+                        var maxDuration = calculateMaxDuration(selectedTime);
+                        durationInput.attr('max', maxDuration);
+                        
+                        // Adjust duration value if it exceeds the new max value
+                        if (durationInput.val() > maxDuration) {
+                            durationInput.val(maxDuration);
+                        }
+                    }
+                }
+            });
+
+            function checkAvailability() {
+                var selectedDate = $("#datepicker").val();
+                var selectedTime = $("#timepicker").data("kendoTimePicker").value();
+                var duration = $("#duration").val();
+                if (selectedDate && selectedTime && duration) {
+                    selectedTime = kendo.toString(selectedTime, "HH:mm");
+                    $.ajax({
+                        url: "{% url 'check_availability' %}",
+                        type: "GET",
+                        data: {
+                            'date': selectedDate,
+                            'time': selectedTime,
+                            'duration': duration
+                        },
+                        success: function(data){
+                            // Reset previous highlights
+                            $(".table-btn").removeClass("available");
+                            // Highlight available tables
+                            $.each(data.tables, function(index, value){
+                                $("#table-" + value).addClass("available");
+                            });
+                        }
+                    });
+                }
+            }
+
+            $("#datepicker, #timepicker, #duration").change(checkAvailability);
+
+            // Wywołanie funkcji przy inicjalizacji strony
+            checkAvailability();
+            // Get the current time rounded to the nearest hour and calculate max duration
+            var maxDuration = calculateMaxDuration(nearestHour);
+            // Set the initial max attribute for the duration input
+            $("#duration").attr('max', maxDuration);
+        });
+    </script>
+    <style>
+        .table-btn {
+            background-color: #9e9d9d!important;;
+            border: 0.2vh solid rgb(219, 216, 216) ;
+            font-size: 3vh;
+        }
+        .available {
+            background-image:  url("{% static 'images/image-table.gif' %}")!important;
+            color: rgb(0, 61, 8);
+            text-shadow: 2px 2px #fafafa;
+            font-size: 3vh;
+            cursor: pointer;
+        }
+        .available:hover {
+            background-image:  url("{% static 'images/image-table.gif' %}")!important;
+            color: rgb(47, 126, 57);
+            text-shadow: 2px 2px #fafafa;
+            font-size: 3vh;
+            cursor: pointer;
+            border: 4px solid green;
+        }
+
+    </style>
+
+    <div class="container">
+        <h2>Wybierz termin rezerwacji</h2>
+        <form id="reservationForm" method="get" class="row gy-2 gx-3 align-items-center" action="{% url 'reserve_table' %}">
+            {% csrf_token %}
+            <div class="col-auto">
+                <div class="input-group">
+                    <div class="input-group-text">Data</div>
+                    <input type="date" id="datepicker" name="date" class="form-control">
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="input-group">
+                    <div class="input-group-text">Godzina</div>
+                    <input id="timepicker" name="time">
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="input-group">
+                    <div class="input-group-text">Czas rezerwacji [godzina]</div>
+                    <input type="number" id="duration" name="duration" class="form-control" min="1" max="4">
+                </div>
+            </div>
+            <input type="hidden" id="tableInput" name="table">
+        </form>
+        
+        <br>
+        <h2>Wybierz <span style="color:rgb(0, 73, 10);">dostępny</span> stolik</h2>
+        <div class="row gy-5 justify-content-center align-items-center">
+            {% for table in tables %}
+                <div class="col-{% if table.capacity >= 12 %}12{% else %}{{ table.capacity }}{% endif %}">
+                    <div id="table-{{ table.number }}" class="p-{% if table.capacity >= 6 %}5{% else %}{{ table.capacity }}{% endif %} text-center rounded-5 table-btn available">
+                        <h4 class="p-0 mt-3 mb-1">Stolik {{ table.number }}</h4>
+                        <p class="p-0 mb-3">Miejsca: {{ table.capacity }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // Add click event to available tables to navigate to another page
+                document.querySelectorAll(".table-btn.available").forEach(function(element) {
+                    element.addEventListener("click", function() {
+                        var tableNumber = this.id.split('-')[1];
+                        var form = document.getElementById('reservationForm');
+                        var tableInput = document.getElementById('tableInput');
+                        tableInput.value = tableNumber;
+            
+                        // Check if the selected table is available
+                        if (this.classList.contains('available')) {
+                            // Update form action with the correct table number
+                            var url = form.action.replace(/\/\d+$/, '/' + tableNumber);
+                            form.action = url;
+
+                            // Submit the form
+                            form.submit();
+                        }
+                    });
+                });
+            });
+            </script>
+               
+        
+    </div>
+    <br>
+    {% endblock %}

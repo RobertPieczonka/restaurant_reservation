@@ -1,0 +1,47 @@
+{% extends 'reserv/template.html' %}
+{% block title %}Restaurant Homepage{% endblock %}
+{% load static %}
+{% block content %} 
+
+<div class="container mt-5">
+    <h1>Moje rezerwacje</h1>
+    <table class="table table-striped">
+        <thead class="table-danger">
+            <tr>
+                <th>Data</th>
+                <th>Godzina</th>
+                <th>Czas trwania</th>
+                <th>Numer stołu</th>
+                <th>Imię i nazwisko</th>
+                <th>Status</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation, status in reservations_status %}
+            <tr>
+                <td>{{ reservation.date }}</td>
+                <td>{{ reservation.time }}</td>
+                <td>{{ reservation.duration }}</td>
+                <td>{{ reservation.table.number }}</td>
+                <td>{{ reservation.user }}</td>
+                <td>{{ status }}</td>
+                <td>
+                    {% if status == "Miniona" %}
+                        --
+                    {% else %}
+                        <form method="post" action="#" style="display: inline;">
+                            {% csrf_token %}
+                            <input name="id" type='number' value="{{reservation.id}}" style="display: none">
+                            <button type="submit" class="btn btn-danger">❌ Zrezygnuj</button>
+                        </form>
+                    {% endif %}
+                </td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+</div>
+{% endblock %} 

@@ -1,0 +1,15 @@
+{% extends 'reserv/template.html' %}
+{% block title %}Rejestracja{% endblock %}
+
+    {% block content %}
+
+    <h1>Zarejestruj się!</h1>
+    <form class="form-with-validation" method="POST">
+        {% csrf_token %}
+        {{ form }}
+        <br>
+        <button class="btn btn-success">Zarejestruj</button>
+
+    </form>
+    <br>
+{% endblock %}

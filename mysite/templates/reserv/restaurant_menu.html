@@ -1,0 +1,26 @@
+{% extends 'reserv/template.html' %}
+{% block title %}Restaurant Menu{% endblock %}
+{% load static %}
+{% block content %} 
+
+
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Pomidoro Menu</h1>
+        <div class="row">
+            {% for item in items %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <hr style="border: 5px solid red!important;">
+                            <p class="card-text"  style="height: 3rem;">{{ item.description }}</p>
+                            <p class="card-text"><strong>Cena:</strong> {{ item.price }} PLN</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+{% endblock %}
